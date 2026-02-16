@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:lernix_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop # Fresh schema for every test run
+    show-sql: false
+
+  h2:
+    console:
+      enabled: true # Useful for debugging tests
+      path: /h2-console
+
+  flyway:
+    enabled: false # Hibernate manages schema in tests (speed > safety)
+
+logging:
+  level:
+    root: WARN
+
+
