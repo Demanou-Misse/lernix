@@ -5,8 +5,8 @@ import com.lernix.infrastructure.web.dto.request.CreateUserRequest;
 import com.lernix.infrastructure.web.dto.response.UserResponse;
 import com.lernix.infrastructure.web.mapper.UserMapper;
 import com.lernix.application.usecase.CreateUserUseCase;
+import com.lernix.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,18 +28,14 @@ public class UserController {
             summary = "Register a new user",
             description = "Creates a unique user account using email and password."
     )
-    @ApiResponse(responseCode = "201", description = "User successfully created")
-    @ApiResponse(responseCode = "400", description = "Invalid input data")
-    @ApiResponse(responseCode = "409", description = "Email already registered")
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse register(@RequestBody @Valid CreateUserRequest request) {
-        log.info("REST request to register user: {}", request.email());
-
+    public ApiResponse<UserResponse> register(@RequestBody @Valid CreateUserRequest request) {
         User createdUser = createUserUseCase.execute(request.email(), request.password());
+        UserResponse response = userMapper.toResponse(createdUser);
 
-        log.info("User successfully registered with ID: {}", createdUser.id().value());
-        return userMapper.toResponse(createdUser);
+        return ApiResponse.success(response, "User successfully registered");
     }
 }
 
