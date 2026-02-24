@@ -5,7 +5,7 @@ import java.time.Instant;
 public record User(
         UserId id,
         Email email,
-        String passwordHash,
+        PasswordHash passwordHash,
         Instant createdAt
 ) {
     public User {
@@ -14,7 +14,7 @@ public record User(
         }
     }
 
-    public static User create(Email email, String passwordHash) {
+    public static User create(Email email, PasswordHash passwordHash) {
         return new User(UserId.generate(), email, passwordHash, Instant.now());
     }
 }
