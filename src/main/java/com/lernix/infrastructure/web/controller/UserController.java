@@ -32,7 +32,10 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<UserResponse> register(@RequestBody @Valid CreateUserRequest request) {
+        log.info("REST request to register user: {}", request.email());
+
         User createdUser = createUserUseCase.execute(request.email(), request.password());
+        log.info("User successfully registered with ID: {}", createdUser.id().value());
         UserResponse response = userMapper.toResponse(createdUser);
 
         return ApiResponse.success(response, "User successfully registered");
