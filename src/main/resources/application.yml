@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: lernix-backend
+  profiles:
+    active: dev # Default profile
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false # ISO-8601 Standard
+
+# OpenAPI / Swagger Documentation
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    display-request-duration: true
+
+# Security logging for debugging (Pro standard)
+logging:
+  level:
+    com.lernix: DEBUG
+    org.springframework.security: INFO
