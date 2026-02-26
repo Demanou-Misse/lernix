@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false # Never log SQL in production (Performance & Security)
+    properties:
+      hibernate:
+        generate_statistics: false
+
+  # Strict security for production
+  server:
+    error:
+      include-stacktrace: never # Security: don't leak code structure on error
+      include-message: always
+
+logging:
+  level:
+    root: WARN
+    com.lernix: INFO
