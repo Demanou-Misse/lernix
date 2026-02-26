@@ -10,6 +10,8 @@ public interface DeckRepositoryPort {
     Deck save(Deck deck);
     Optional<Deck> findById(DeckId id);
     List<Deck> findAllByOwnerId(UserId ownerId);
+    boolean existsById(DeckId id);
     void deleteById(DeckId id);
 }
+
 
