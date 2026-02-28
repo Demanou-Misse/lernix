@@ -4,7 +4,7 @@ import com.lernix.domain.model.*;
 import com.lernix.domain.ports.UserRepositoryPort;
 import com.lernix.domain.service.PasswordHasher;
 import com.lernix.shared.exception.EntityAlreadyExistsException;
-import com.lernix.application.usecase.CreateUserUseCase;
+import com.lernix.application.usecase.user.CreateUserUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
