@@ -7,7 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.NaturalId;
 
 import java.time.Instant;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Infrastructure JPA Entity for User persistence.
@@ -45,6 +45,11 @@ public class UserEntity {
     // Standard for 2026: Manual versioning for optimistic locking
     @Version
     private Long version;
+
+    // 1:N Relationship: One user can have many decks
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<DeckEntity> decks = new HashSet<>();
 
     /**
      * Strategic Equals/HashCode: In JPA, we must use the Business Key (UUID)

@@ -10,13 +10,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Infrastructure configuration to register Pure Java Use Cases as Spring Beans.
- * This ensures the application layer remains independent of the Spring Framework.
+ * Global Use Case Configuration.
+ * Orchestrates the wiring of Pure Java Use Cases with Infrastructure Adapters.
+ * Following the Dependency Inversion Principle (DIP).
  */
 @Configuration
 public class UseCaseConfig {
 
-    // --- USER USE CASES ---
+    // --- User Domain Use Cases ---
 
     @Bean
     public CreateUserUseCase createUserUseCase(
@@ -25,7 +26,7 @@ public class UseCaseConfig {
         return new CreateUserUseCase(userRepositoryPort, passwordHasher);
     }
 
-    // --- DECK USE CASES ---
+    // --- Deck Domain Use Cases ---
 
     @Bean
     public CreateDeckUseCase createDeckUseCase(
