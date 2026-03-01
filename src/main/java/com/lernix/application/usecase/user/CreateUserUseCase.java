@@ -1,4 +1,4 @@
-package com.lernix.application.usecase;
+package com.lernix.application.usecase.user;
 
 import com.lernix.domain.model.Email;
 import com.lernix.domain.model.PasswordHash;

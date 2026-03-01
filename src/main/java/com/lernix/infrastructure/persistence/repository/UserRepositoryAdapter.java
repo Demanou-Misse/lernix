@@ -55,6 +55,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         return jpaRepository.count();
     }
 
+    @Override
+    public boolean existsById(UserId id) {
+        return jpaRepository.existsById(id.value());
+    }
+
     // --- Private Mapping Methods (Infrastructure Detail) ---
 
     private UserEntity toEntity(User domain) {

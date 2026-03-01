@@ -12,5 +12,6 @@ public interface UserRepositoryPort {
     Optional<User> findById(UserId id);
     void deleteById(UserId id);
     long count();
+    boolean existsById(UserId ownerId);
 }
 

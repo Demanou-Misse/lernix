@@ -13,18 +13,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable) // Required for POST requests in development
+        return http
+                .csrf(AbstractHttpConfigurer::disable) // Required for POST/PATCH/DELETE
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Permit Swagger & OpenAPI Docs
+                        // 1. Swagger & OpenAPI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // 2. Permit User Registration (Issue #2)
+                        // 2. User Registration (Issue #2)
                         .requestMatchers("/api/v1/users/**").permitAll()
-                        // 3. Secure everything else
+                        // 3. Deck Management (Issue #3) - ADD THIS LINE
+                        .requestMatchers("/api/v1/decks/**").permitAll()
+                        // 4. Everything else remains secured
                         .anyRequest().authenticated()
-                );
-
-        return http.build();
+                )
+                .build();
     }
 }
-
