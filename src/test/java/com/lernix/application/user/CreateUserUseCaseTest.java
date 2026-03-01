@@ -1,4 +1,4 @@
-package com.lernix.application;
+package com.lernix.application.user;
 
 import com.lernix.domain.model.*;
 import com.lernix.domain.ports.UserRepositoryPort;

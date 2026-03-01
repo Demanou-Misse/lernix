@@ -1,19 +1,35 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:lernixdb;DB_CLOSE_DELAY=-1
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: true # To check data at http://localhost:8080/h2-console
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: create-drop # Automatically create tables for this test
-    show-sql: true
+    # Connects to the PostgreSQL container started via compose.yaml
+    url: jdbc:postgresql://localhost:5432/lernix_db
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
 
-  # Flyway migration
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      # 'validate' ensures DB schema matches Java entities
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        # Performance optimization for modern Postgres
+        jdbc.batch_size: 25
+        order_inserts: true
+
+  # Flyway: The source of truth for your database schema
   flyway:
     enabled: true
+    locations: classpath:db/migration
+    # Ensures Flyway can start even if the DB already has some data
     baseline-on-migrate: true
+    # Prevents accidental execution in the wrong environment
+    clean-disabled: true
+
+logging:
+  level:
+    org.flywaydb: INFO
+    org.hibernate.SQL: DEBUG
+
