@@ -1,9 +1,6 @@
 package com.lernix.infrastructure.web.exception;
 
-import com.lernix.shared.exception.DomainException;
-import com.lernix.shared.exception.EntityAlreadyExistsException;
-import com.lernix.shared.exception.UserNotFoundException;
-import com.lernix.shared.exception.DeckNotFoundException;
+import com.lernix.shared.exception.*;
 import com.lernix.shared.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -45,10 +42,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle Resource Missing (User or Deck not found)
+     * Handle Missing Resources (User, Deck or Card Not Found)
      * Returns 404 Not Found.
      */
-    @ExceptionHandler({UserNotFoundException.class, DeckNotFoundException.class})
+    @ExceptionHandler({
+            UserNotFoundException.class,
+            DeckNotFoundException.class,
+            CardNotFoundException.class
+    })
     public ResponseEntity<ApiResponse<Object>> handleNotFound(DomainException ex) {
         log.warn("Resource not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());

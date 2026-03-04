@@ -82,11 +82,11 @@ public class DeckController {
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete deck", description = "Permanently remove a deck from the system")
-    public void delete(@PathVariable UUID id) {
-        log.error("Deleting deck: {}", id);
+    public ApiResponse<Void> delete(@PathVariable UUID id) {
+        log.warn("REST request to delete deck: {}", id);
         deleteDeckUseCase.execute(new DeckId(id));
+        return ApiResponse.success(null, "Deck and all its cards successfully deleted");
     }
 }
 
