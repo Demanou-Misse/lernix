@@ -1,5 +1,7 @@
 package com.lernix.infrastructure.config;
 
+import com.lernix.application.usecase.card.*;
+import com.lernix.domain.ports.CardRepositoryPort;
 import com.lernix.domain.ports.DeckRepositoryPort;
 import com.lernix.domain.ports.UserRepositoryPort;
 import com.lernix.domain.service.DeckService;
@@ -61,6 +63,32 @@ public class UseCaseConfig {
     @Bean
     public GetDeckDetailsUseCase getDeckDetailsUseCase(DeckRepositoryPort deckRepositoryPort) {
         return new GetDeckDetailsUseCase(deckRepositoryPort);
+    }
+
+    // --- CARD USE CASES ---
+    @Bean
+    public CreateCardUseCase createCardUseCase(CardRepositoryPort cardRepositoryPort, DeckRepositoryPort deckRepositoryPort) {
+        return new CreateCardUseCase(cardRepositoryPort, deckRepositoryPort);
+    }
+
+    @Bean
+    public UpdateCardContentUseCase updateCardContentUseCase(CardRepositoryPort cardRepositoryPort) {
+        return new UpdateCardContentUseCase(cardRepositoryPort);
+    }
+
+    @Bean
+    public GetDeckCardsUseCase getDeckCardsUseCase(CardRepositoryPort cardRepositoryPort, DeckRepositoryPort deckRepositoryPort) {
+        return new GetDeckCardsUseCase(cardRepositoryPort, deckRepositoryPort);
+    }
+
+    @Bean
+    public GetCardDetailsUseCase getCardDetailsUseCase(CardRepositoryPort cardRepositoryPort) {
+        return new GetCardDetailsUseCase(cardRepositoryPort);
+    }
+
+    @Bean
+    public DeleteCardUseCase deleteCardUseCase(CardRepositoryPort cardRepositoryPort) {
+        return new DeleteCardUseCase(cardRepositoryPort);
     }
 }
 

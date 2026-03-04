@@ -1,3 +1,4 @@
+-- Schema for User Management
 CREATE TABLE users (
     id UUID PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,

@@ -1,3 +1,4 @@
+-- Schema for Deck Management
 CREATE TABLE decks (
     id UUID PRIMARY KEY,
     owner_id UUID NOT NULL,
