@@ -1,6 +1,9 @@
 package com.lernix.infrastructure.persistence.repository;
 
-import com.lernix.domain.model.*;
+import com.lernix.domain.model.Deck;
+import com.lernix.domain.model.DeckId;
+import com.lernix.domain.model.DeckTitle;
+import com.lernix.domain.model.UserId;
 import com.lernix.domain.ports.DeckRepositoryPort;
 import com.lernix.infrastructure.persistence.entity.DeckEntity;
 import com.lernix.infrastructure.persistence.entity.UserEntity;
@@ -12,17 +15,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
- * High-performance Persistence Adapter for Deck Aggregate.
- * Decouples Domain Models from JPA Infrastructure.
+ * Persistence Adapter for Deck Aggregate.
+ * Optimized for PostgreSQL 17 and high-concurrency environments.
  */
 @Component
 @RequiredArgsConstructor
 public class DeckRepositoryAdapter implements DeckRepositoryPort {
 
-    private final JpaDeckRepository jpaRepository;
+    private final JpaDeckRepository jpaDeckRepository;
 
     @PersistenceContext
     private final EntityManager entityManager;
@@ -31,46 +33,54 @@ public class DeckRepositoryAdapter implements DeckRepositoryPort {
     @Transactional
     public Deck save(Deck deck) {
         DeckEntity entity = toEntity(deck);
-        DeckEntity savedEntity = jpaRepository.save(entity);
+        DeckEntity savedEntity = jpaDeckRepository.save(entity);
         return toDomain(savedEntity);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Deck> findById(DeckId id) {
-        return jpaRepository.findById(id.value())
+        return jpaDeckRepository.findById(id.value())
                 .map(this::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Deck> findAllByOwnerId(UserId ownerId) {
-        return jpaRepository.findAllByOwnerId(ownerId.value())
+        return jpaDeckRepository.findAllByOwnerId(ownerId.value())
                 .stream()
                 .map(this::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean existsById(DeckId id) {
-        return jpaRepository.existsById(id.value());
+        return jpaDeckRepository.existsById(id.value());
     }
 
     @Override
     @Transactional
     public void deleteById(DeckId id) {
-        jpaRepository.deleteById(id.value());
+        // SQL Cascade handles the linked cards automatically
+        jpaDeckRepository.deleteById(id.value());
     }
 
-    // --- High-Performance Mappers ---
+    @Override
+    @Transactional(readOnly = true)
+    public long countByOwnerId(UserId userId) {
+        // High-performance SQL COUNT via JpaRepository
+        return jpaDeckRepository.countByOwnerId(userId.value());
+    }
+
+    // --- Enterprise Grade Mappers ---
 
     /**
-     * Maps Domain Aggregate to JPA Entity.
-     * Note: Uses EntityManager.getReference to link the User without an extra SELECT query.
+     * Maps Domain Deck to Infrastructure Entity.
+     * PERFORMANCE: Uses EntityManager.getReference to avoid a database roundtrip for the Owner.
      */
     private DeckEntity toEntity(Deck domain) {
-        // Optimization: We don't need to load the full UserEntity from DB, just a proxy with the ID
+        // Use a Proxy for the UserEntity because we only need the ID for the Foreign Key
         UserEntity ownerProxy = entityManager.getReference(UserEntity.class, domain.ownerId().value());
 
         return DeckEntity.builder()
@@ -85,18 +95,19 @@ public class DeckRepositoryAdapter implements DeckRepositoryPort {
     }
 
     /**
-     * Maps JPA Entity back to Domain Aggregate.
+     * Maps Infrastructure Entity to Domain Deck (Record).
      */
     private Deck toDomain(DeckEntity entity) {
         return new Deck(
                 new DeckId(entity.getId()),
-                new UserId(entity.getOwner().getId()), // Lazy-safe access
+                new UserId(entity.getOwner().getId()),
                 new DeckTitle(entity.getTitle()),
                 entity.getDescription(),
-                DeckStatus.valueOf(entity.getStatus()),
+                com.lernix.domain.model.DeckStatus.valueOf(entity.getStatus()),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
     }
 }
+
 
