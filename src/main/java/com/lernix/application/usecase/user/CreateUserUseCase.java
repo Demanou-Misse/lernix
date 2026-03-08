@@ -26,7 +26,7 @@ public class CreateUserUseCase {
         }
 
         PasswordHash hash = passwordHasher.encode(plainPassword);
-        User newUser = User.create(userEmail, hash);
+        User newUser = User.register(userEmail, hash);
 
         return userRepositoryPort.save(newUser);
     }
