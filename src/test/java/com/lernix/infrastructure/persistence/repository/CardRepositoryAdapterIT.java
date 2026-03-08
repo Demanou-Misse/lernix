@@ -36,21 +36,39 @@ class CardRepositoryAdapterIT {
     @Test
     @DisplayName("Should persist card and verify Cascade Delete when Deck is removed")
     void shouldPersistAndHandleCascadeDelete() {
-        // 1. Given: A persisted User and Deck
+        // 1. Given: A new UserEntity
         UUID userId = UUID.randomUUID();
-        UserEntity owner = UserEntity.builder().id(userId).email("it-card-"+userId+"@test.com").passwordHash("h").createdAt(Instant.now()).build();
+        UserEntity owner = UserEntity.builder()
+                .id(userId)
+                .email("it-card-" + userId + "@test.com")
+                .passwordHash("a".repeat(60))
+                .status("ACTIVE")
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .version(null)
+                .build();
+
         entityManager.persist(owner);
 
+        // 2. Given: A new DeckEntity
         UUID deckId = UUID.randomUUID();
-        DeckEntity deck = DeckEntity.builder().id(deckId).title("IT Deck").status("ACTIVE").owner(owner).createdAt(Instant.now()).updatedAt(Instant.now()).build();
-        entityManager.persist(deck);
-        entityManager.flush();
+        DeckEntity deck = DeckEntity.builder()
+                .id(deckId)
+                .title("IT Deck")
+                .status("ACTIVE")
+                .owner(owner)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
 
-        // 2. When: Saving a card
-        Card card = Card.create(new DeckId(deckId), "Front SQL", "Back SQL");
-        cardRepositoryAdapter.save(card);
+        entityManager.persist(deck);
+
         entityManager.flush();
         entityManager.clear();
+
+        // 3. When: Saving a card via the adapter
+        Card card = Card.create(new DeckId(deckId), "Front SQL", "Back SQL");
+        cardRepositoryAdapter.save(card);
 
         // 3. Then: Verify existence and Cascade
         assertTrue(cardRepositoryAdapter.existsById(new CardId(card.id().value())));
