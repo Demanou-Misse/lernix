@@ -10,6 +10,7 @@ import java.util.UUID;
 @Repository
 public interface JpaDeckRepository extends JpaRepository<DeckEntity, UUID> {
     Set<DeckEntity> findAllByOwnerId(UUID ownerId);
+    long countByOwnerId(UUID value);
 }
 
 

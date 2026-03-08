@@ -13,11 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Persistence Adapter for Card Aggregate.
+ * Optimized for high-volume inventory management and bulk operations.
+ */
 @Component
 @RequiredArgsConstructor
 public class CardRepositoryAdapter implements CardRepositoryPort {
 
-    private final JpaCardRepository jpaRepository;
+    private final JpaCardRepository jpaCardRepository;
 
     @PersistenceContext
     private final EntityManager entityManager;
@@ -26,44 +30,56 @@ public class CardRepositoryAdapter implements CardRepositoryPort {
     @Transactional
     public Card save(Card card) {
         CardEntity entity = toEntity(card);
-        return toDomain(jpaRepository.save(entity));
+        CardEntity savedEntity = jpaCardRepository.save(entity);
+        return toDomain(savedEntity);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Card> findById(CardId id) {
-        return jpaRepository.findById(id.value()).map(this::toDomain);
+        return jpaCardRepository.findById(id.value())
+                .map(this::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Card> findAllByDeckId(DeckId deckId) {
-        return jpaRepository.findAllByDeckId(deckId.value())
-                .stream().map(this::toDomain).toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsById(CardId id) {
-        return jpaRepository.existsById(id.value());
+        return jpaCardRepository.findAllByDeckId(deckId.value())
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override
     @Transactional
     public void deleteById(CardId id) {
-        jpaRepository.deleteById(id.value());
+        jpaCardRepository.deleteById(id.value());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long countByDeckId(DeckId deckId) {
-        return jpaRepository.countByDeckId(deckId.value());
+    public boolean existsById(CardId id) {
+        return jpaCardRepository.existsById(id.value());
     }
 
-    // --- High Performance Mappers ---
+    /**
+     * Strategic Optimization for Issue #5 Statistics.
+     * Counts cards across all decks owned by the user using a single SQL Join.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public long countByOwnerId(UserId userId) {
+        return jpaCardRepository.countByDeckOwnerId(userId.value());
+    }
 
+    // --- Enterprise Grade Mappers ---
+
+    /**
+     * Maps Domain Card to Infrastructure Entity.
+     * PERFORMANCE: Uses EntityManager.getReference to avoid loading the full Deck object.
+     */
     private CardEntity toEntity(Card domain) {
-        // Optimization: Use Proxy for Deck to avoid unnecessary SELECT
+        // Optimization: Create a Proxy for the Deck to avoid an unnecessary SELECT
         DeckEntity deckProxy = entityManager.getReference(DeckEntity.class, domain.deckId().value());
 
         return CardEntity.builder()
@@ -76,6 +92,9 @@ public class CardRepositoryAdapter implements CardRepositoryPort {
                 .build();
     }
 
+    /**
+     * Maps Infrastructure Entity to Domain Card (Record).
+     */
     private Card toDomain(CardEntity entity) {
         return new Card(
                 new CardId(entity.getId()),
@@ -86,4 +105,5 @@ public class CardRepositoryAdapter implements CardRepositoryPort {
         );
     }
 }
+
 

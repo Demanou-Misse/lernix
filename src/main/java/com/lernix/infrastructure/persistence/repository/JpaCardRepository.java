@@ -13,5 +13,6 @@ public interface JpaCardRepository extends JpaRepository<CardEntity, UUID> {
     List<CardEntity> findAllByDeckId(UUID deckId);
 
     long countByDeckId(UUID deckId);
+    long countByDeckOwnerId(UUID value);
 }
 

@@ -12,6 +12,7 @@ public interface DeckRepositoryPort {
     List<Deck> findAllByOwnerId(UserId ownerId);
     boolean existsById(DeckId id);
     void deleteById(DeckId id);
+    long countByOwnerId(UserId userId);
 }
 
 

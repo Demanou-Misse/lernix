@@ -42,6 +42,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle Security/Identity Validation Errors (e.g., Wrong Current Password).
+     * Returns 401 Unauthorized.
+     */
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidPassword(InvalidPasswordException ex) {
+        log.warn("Security violation: {}", ex.getMessage());
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+
+    /**
      * Handle Missing Resources (User, Deck or Card Not Found)
      * Returns 404 Not Found.
      */
