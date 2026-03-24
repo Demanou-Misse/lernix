@@ -1,5 +1,7 @@
 package com.lernix.domain.model;
 
+import com.lernix.domain.enums.DeckStatus;
+
 import java.time.Instant;
 
 /**

@@ -2,6 +2,7 @@ package com.lernix.infrastructure.config;
 
 import com.lernix.application.usecase.card.*;
 import com.lernix.application.usecase.user.*;
+import com.lernix.domain.algorithm.SpacedRepetitionEngine;
 import com.lernix.domain.ports.CardRepositoryPort;
 import com.lernix.domain.ports.DeckRepositoryPort;
 import com.lernix.domain.ports.UserRepositoryPort;
@@ -123,6 +124,28 @@ public class UseCaseConfig {
     public DeleteCardUseCase deleteCardUseCase(CardRepositoryPort cardRepositoryPort) {
         return new DeleteCardUseCase(cardRepositoryPort);
     }
+
+    // --- SRS ENGINE ---
+    @Bean
+    public SpacedRepetitionEngine spacedRepetitionEngine() {
+        // Manual instantiation of pure domain logic
+        return new com.lernix.domain.algorithm.SM2Engine();
+    }
+
+    // --- CARD REVIEW & REPETITION ---
+
+    @Bean
+    public ProcessCardReviewUseCase processCardReviewUseCase(
+            CardRepositoryPort cardRepositoryPort,
+            SpacedRepetitionEngine repetitionEngine) {
+        return new ProcessCardReviewUseCase(cardRepositoryPort, repetitionEngine);
+    }
+
+    @Bean
+    public GetCardsByTagUseCase getCardsByTagUseCase(CardRepositoryPort cardRepositoryPort) {
+        return new GetCardsByTagUseCase(cardRepositoryPort);
+    }
+
 }
 
 
