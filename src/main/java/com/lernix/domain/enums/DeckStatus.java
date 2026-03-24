@@ -1,4 +1,4 @@
-package com.lernix.domain.model;
+package com.lernix.domain.enums;
 
 public enum DeckStatus {
     ACTIVE,
