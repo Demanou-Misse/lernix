@@ -1,44 +1,58 @@
 package com.lernix.domain.model;
 
+import com.lernix.domain.algorithm.ReviewResult;
+import com.lernix.domain.algorithm.SpacedRepetitionEngine;
+import com.lernix.domain.enums.CardState;
+import com.lernix.domain.enums.ReviewGrade;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import java.util.UUID;
-import static org.junit.jupiter.api.Assertions.*;
+import org.mockito.Mockito;
 
-@DisplayName("Domain: Card Aggregate Unit Tests")
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@DisplayName("Domain: Card Aggregate Logic")
 class CardTest {
 
     @Test
-    @DisplayName("Should create a card with initial timestamps via factory")
-    void shouldCreateCardCorrectly() {
+    @DisplayName("Should initialize a NEW card with default SRS metadata")
+    void shouldCreateCardWithInitialState() {
         DeckId deckId = new DeckId(UUID.randomUUID());
 
-        Card card = Card.create(deckId, "Question", "Answer");
+        Card card = Card.create(deckId, "Front", "Back", Collections.emptySet());
 
-        assertAll("Card initial state",
-                () -> assertNotNull(card.id()),
-                () -> assertEquals(deckId, card.deckId()),
-                () -> assertEquals("Question", card.content().front()),
-                () -> assertNotNull(card.createdAt()),
-                () -> assertEquals(card.createdAt(), card.updatedAt(), "Initially, createdAt and updatedAt should be identical")
-        );
+        assertThat(card.getState()).isEqualTo(CardState.NEW);
+        assertThat(card.getReviewMetaData().easeFactor()).isEqualTo(2.5);
+        assertThat(card.getReviewMetaData().interval()).isZero();
+        assertThat(card.getCreatedAt()).isEqualTo(card.getUpdatedAt());
     }
 
     @Test
-    @DisplayName("Should produce a new instance with updated timestamp when content changes")
-    void shouldUpdateContentImmutably() throws InterruptedException {
-        Card original = Card.create(new DeckId(UUID.randomUUID()), "Old Front", "Old Back");
-
+    @DisplayName("Should update state and timestamps after a successful review")
+    void shouldUpdateStateAfterReview() throws InterruptedException {
+        // FIX: Ajout du paramètre tags
+        Card card = Card.create(new DeckId(UUID.randomUUID()), "Q", "A", Collections.emptySet());
+        Instant originalUpdate = card.getUpdatedAt();
         Thread.sleep(1);
 
-        Card updated = original.updateContent("New Front", "New Back");
+        SpacedRepetitionEngine engine = Mockito.mock(SpacedRepetitionEngine.class);
+        ReviewMetaData nextMeta = new ReviewMetaData(2.6, 4, 1, Instant.now().plusSeconds(86400));
+        when(engine.calculateNextReview(any(), any(), any()))
+                .thenReturn(new ReviewResult(CardState.REVIEW, nextMeta));
 
-        assertAll("Updated card state",
-                () -> assertEquals(original.id(), updated.id(), "Identity must be preserved"),
-                () -> assertEquals("New Front", updated.content().front()),
-                () -> assertEquals(original.createdAt(), updated.createdAt(), "Creation date must never change"),
-                () -> assertTrue(updated.updatedAt().isAfter(original.updatedAt()), "Update date must be refreshed")
-        );
+        card.applyReview(ReviewGrade.EASY, engine);
+
+        assertThat(card.getState()).isEqualTo(CardState.REVIEW);
+        assertThat(card.getReviewMetaData().easeFactor()).isEqualTo(2.6);
+        assertThat(card.getUpdatedAt()).isAfter(originalUpdate);
     }
+
 }
+
 

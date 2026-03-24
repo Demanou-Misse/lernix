@@ -1,6 +1,7 @@
 package com.lernix.usecase.user;
 
 import com.lernix.application.usecase.user.DisableUserAccountUseCase;
+import com.lernix.domain.enums.UserStatus;
 import com.lernix.domain.model.*;
 import com.lernix.domain.ports.UserRepositoryPort;
 import org.junit.jupiter.api.DisplayName;

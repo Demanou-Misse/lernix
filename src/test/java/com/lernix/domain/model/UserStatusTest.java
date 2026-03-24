@@ -1,5 +1,6 @@
 package com.lernix.domain.model;
 
+import com.lernix.domain.enums.UserStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertAll;
