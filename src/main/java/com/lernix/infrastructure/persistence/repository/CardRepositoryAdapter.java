@@ -3,42 +3,59 @@ package com.lernix.infrastructure.persistence.repository;
 import com.lernix.domain.model.*;
 import com.lernix.domain.ports.CardRepositoryPort;
 import com.lernix.infrastructure.persistence.entity.CardEntity;
-import com.lernix.infrastructure.persistence.entity.DeckEntity;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import com.lernix.infrastructure.web.mapper.CardMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * Persistence Adapter for Card Aggregate.
- * Optimized for high-volume inventory management and bulk operations.
+ * 2026 Senior Standard: High-performance orchestration between Domain and DB.
+ * Delegates mapping to CardMapper and handles transactional boundaries.
  */
 @Component
 @RequiredArgsConstructor
 public class CardRepositoryAdapter implements CardRepositoryPort {
 
     private final JpaCardRepository jpaCardRepository;
-
-    @PersistenceContext
-    private final EntityManager entityManager;
+    private final CardMapper cardMapper;
 
     @Override
     @Transactional
     public Card save(Card card) {
-        CardEntity entity = toEntity(card);
+        // Delegate complex mapping (including Tag dictionary lookup) to the mapper
+        CardEntity entity = cardMapper.toEntity(card);
         CardEntity savedEntity = jpaCardRepository.save(entity);
-        return toDomain(savedEntity);
+        return cardMapper.toDomain(savedEntity);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Card> findById(CardId id) {
         return jpaCardRepository.findById(id.value())
-                .map(this::toDomain);
+                .map(cardMapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Card> findAllByTag(UserId userId, Tag tag) {
+        return jpaCardRepository.findAllByTagAndOwner(tag.value(), userId.value())
+                .stream()
+                .map(cardMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Card> findDueByTag(UserId userId, Tag tag, Instant now) {
+        return jpaCardRepository.findDueByTagAndOwner(tag.value(), userId.value(), now)
+                .stream()
+                .map(cardMapper::toDomain)
+                .toList();
     }
 
     @Override
@@ -46,7 +63,7 @@ public class CardRepositoryAdapter implements CardRepositoryPort {
     public List<Card> findAllByDeckId(DeckId deckId) {
         return jpaCardRepository.findAllByDeckId(deckId.value())
                 .stream()
-                .map(this::toDomain)
+                .map(cardMapper::toDomain)
                 .toList();
     }
 
@@ -62,48 +79,13 @@ public class CardRepositoryAdapter implements CardRepositoryPort {
         return jpaCardRepository.existsById(id.value());
     }
 
-    /**
-     * Strategic Optimization for Issue #5 Statistics.
-     * Counts cards across all decks owned by the user using a single SQL Join.
-     */
     @Override
     @Transactional(readOnly = true)
     public long countByOwnerId(UserId userId) {
         return jpaCardRepository.countByDeckOwnerId(userId.value());
     }
-
-    // --- Enterprise Grade Mappers ---
-
-    /**
-     * Maps Domain Card to Infrastructure Entity.
-     * PERFORMANCE: Uses EntityManager.getReference to avoid loading the full Deck object.
-     */
-    private CardEntity toEntity(Card domain) {
-        // Optimization: Create a Proxy for the Deck to avoid an unnecessary SELECT
-        DeckEntity deckProxy = entityManager.getReference(DeckEntity.class, domain.deckId().value());
-
-        return CardEntity.builder()
-                .id(domain.id().value())
-                .front(domain.content().front())
-                .back(domain.content().back())
-                .createdAt(domain.createdAt())
-                .updatedAt(domain.updatedAt())
-                .deck(deckProxy)
-                .build();
-    }
-
-    /**
-     * Maps Infrastructure Entity to Domain Card (Record).
-     */
-    private Card toDomain(CardEntity entity) {
-        return new Card(
-                new CardId(entity.getId()),
-                new DeckId(entity.getDeck().getId()),
-                new CardContent(entity.getFront(), entity.getBack()),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
-    }
 }
+
+
 
 
