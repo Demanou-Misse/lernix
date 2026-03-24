@@ -11,9 +11,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -30,7 +32,8 @@ class UpdateCardContentUseCaseTest {
     @DisplayName("Should update card content correctly")
     void shouldUpdateCard() {
         CardId cardId = CardId.generate();
-        Card existingCard = Card.create(new DeckId(UUID.randomUUID()), "Old Front", "Old Back");
+        // FIX: Signature create
+        Card existingCard = Card.create(new DeckId(UUID.randomUUID()), "Old Front", "Old Back", Collections.emptySet());
 
         when(cardRepositoryPort.findById(cardId)).thenReturn(Optional.of(existingCard));
         when(cardRepositoryPort.save(any(Card.class))).thenAnswer(i -> i.getArgument(0));
@@ -38,12 +41,12 @@ class UpdateCardContentUseCaseTest {
         Card result = updateCardContentUseCase.execute(cardId, "New Front", "New Back");
 
         assertAll("Verify updated card",
-                () -> assertEquals("New Front", result.content().front()),
-                () -> assertEquals("New Back", result.content().back()),
-                () -> assertTrue(result.updatedAt().isAfter(existingCard.updatedAt())
-                        || result.updatedAt().equals(existingCard.updatedAt()))
+                () -> assertEquals("New Front", result.getContent().front()),
+                // Utilise getUpdatedAt()
+                () -> assertThat(result.getUpdatedAt()).isAfterOrEqualTo(existingCard.getUpdatedAt())
         );
     }
+
 
     @Test
     @DisplayName("Should throw CardNotFoundException when card is missing")

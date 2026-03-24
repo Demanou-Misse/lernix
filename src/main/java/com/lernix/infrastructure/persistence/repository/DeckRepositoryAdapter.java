@@ -7,6 +7,7 @@ import com.lernix.domain.model.UserId;
 import com.lernix.domain.ports.DeckRepositoryPort;
 import com.lernix.infrastructure.persistence.entity.DeckEntity;
 import com.lernix.infrastructure.persistence.entity.UserEntity;
+import com.lernix.infrastructure.web.mapper.DeckMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DeckRepositoryAdapter implements DeckRepositoryPort {
 
+    private final DeckMapper deckMapper;
     private final JpaDeckRepository jpaDeckRepository;
 
     @PersistenceContext
@@ -32,16 +34,16 @@ public class DeckRepositoryAdapter implements DeckRepositoryPort {
     @Override
     @Transactional
     public Deck save(Deck deck) {
-        DeckEntity entity = toEntity(deck);
+        DeckEntity entity =  deckMapper.toEntity(deck);
         DeckEntity savedEntity = jpaDeckRepository.save(entity);
-        return toDomain(savedEntity);
+        return deckMapper.toDomain(savedEntity);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Deck> findById(DeckId id) {
         return jpaDeckRepository.findById(id.value())
-                .map(this::toDomain);
+                .map(deckMapper::toDomain);
     }
 
     @Override
@@ -49,7 +51,7 @@ public class DeckRepositoryAdapter implements DeckRepositoryPort {
     public List<Deck> findAllByOwnerId(UserId ownerId) {
         return jpaDeckRepository.findAllByOwnerId(ownerId.value())
                 .stream()
-                .map(this::toDomain)
+                .map(deckMapper::toDomain)
                 .toList();
     }
 
@@ -73,41 +75,6 @@ public class DeckRepositoryAdapter implements DeckRepositoryPort {
         return jpaDeckRepository.countByOwnerId(userId.value());
     }
 
-    // --- Enterprise Grade Mappers ---
-
-    /**
-     * Maps Domain Deck to Infrastructure Entity.
-     * PERFORMANCE: Uses EntityManager.getReference to avoid a database roundtrip for the Owner.
-     */
-    private DeckEntity toEntity(Deck domain) {
-        // Use a Proxy for the UserEntity because we only need the ID for the Foreign Key
-        UserEntity ownerProxy = entityManager.getReference(UserEntity.class, domain.ownerId().value());
-
-        return DeckEntity.builder()
-                .id(domain.id().value())
-                .title(domain.title().value())
-                .description(domain.description())
-                .status(domain.status().name())
-                .createdAt(domain.createdAt())
-                .updatedAt(domain.updatedAt())
-                .owner(ownerProxy)
-                .build();
-    }
-
-    /**
-     * Maps Infrastructure Entity to Domain Deck (Record).
-     */
-    private Deck toDomain(DeckEntity entity) {
-        return new Deck(
-                new DeckId(entity.getId()),
-                new UserId(entity.getOwner().getId()),
-                new DeckTitle(entity.getTitle()),
-                entity.getDescription(),
-                com.lernix.domain.model.DeckStatus.valueOf(entity.getStatus()),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
-    }
 }
 
 

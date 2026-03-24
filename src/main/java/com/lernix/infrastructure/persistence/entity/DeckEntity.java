@@ -31,8 +31,9 @@ public class DeckEntity {
     private String description;
 
     @NotNull
+    @Builder.Default
     @Column(nullable = false, length = 20)
-    private String status;
+    private String status = "ACTIVE";
 
     @NotNull
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -5,56 +5,47 @@ import com.lernix.shared.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.stream.Collectors;
+
 /**
  * Global Exception Handler - Enterprise Standard 2026.
- * Captures all infrastructure and domain exceptions to return standardized JSON.
+ * Centralizes all Domain and Infrastructure exceptions into a unified API response.
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Handle JSR-303 Validation Errors (@Email, @NotBlank, etc.)
-     * Returns 400 Bad Request.
+     * FIX: Handles JSON parsing errors.
+     * Essential for catching invalid Enum values (e.g., wrong ReviewGrade) and returning 400.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Object>> handlePayloadErrors(HttpMessageNotReadableException ex) {
+        log.warn("Malformed JSON or invalid value: {}", ex.getLocalizedMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid input format or unrecognized value.");
+    }
+
+    /**
+     * Handles @Valid annotation failures (NotBlank, Size, etc.).
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        BindingResult result = ex.getBindingResult();
-        // Senior Tip: Get the first error message for clarity, or map all of them
-        String errorMessage = result.getFieldErrors().getFirst().getDefaultMessage();
-        log.warn("Validation failed: {}", errorMessage);
-        return buildResponse(HttpStatus.BAD_REQUEST, "Validation Error: " + errorMessage);
+        // Senior Tip: Collect all errors for a better developer experience (DX)
+        String details = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("Validation failed: {}", details);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed: " + details);
     }
 
     /**
-     * Handle Business Conflicts (Duplicate Email, Duplicate Title)
-     * Returns 409 Conflict.
-     */
-    @ExceptionHandler(EntityAlreadyExistsException.class)
-    public ResponseEntity<ApiResponse<Object>> handleConflict(EntityAlreadyExistsException ex) {
-        log.warn("Conflict detected: {}", ex.getMessage());
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
-    }
-
-    /**
-     * Handle Security/Identity Validation Errors (e.g., Wrong Current Password).
-     * Returns 401 Unauthorized.
-     */
-    @ExceptionHandler(InvalidPasswordException.class)
-    public ResponseEntity<ApiResponse<Object>> handleInvalidPassword(InvalidPasswordException ex) {
-        log.warn("Security violation: {}", ex.getMessage());
-        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
-    }
-
-
-    /**
-     * Handle Missing Resources (User, Deck or Card Not Found)
-     * Returns 404 Not Found.
+     * Handles 404 Not Found for all domain entities.
      */
     @ExceptionHandler({
             UserNotFoundException.class,
@@ -62,35 +53,50 @@ public class GlobalExceptionHandler {
             CardNotFoundException.class
     })
     public ResponseEntity<ApiResponse<Object>> handleNotFound(DomainException ex) {
-        log.warn("Resource not found: {}", ex.getMessage());
+        log.warn("Resource mapping failed: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     /**
-     * Catch-all for any other Domain Exception.
+     * Handles 409 Conflict (Duplicate emails, titles, etc.).
+     */
+    @ExceptionHandler(EntityAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleConflict(EntityAlreadyExistsException ex) {
+        log.warn("Persistence conflict: {}", ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    /**
+     * Handles Security/Identity verification errors.
+     */
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidPassword(InvalidPasswordException ex) {
+        log.warn("Security rejection: {}", ex.getMessage());
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    /**
+     * Fallback for any Domain Logic violation.
      */
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ApiResponse<Object>> handleDomainException(DomainException ex) {
-        log.error("Domain violation: {}", ex.getMessage());
+        log.error("Domain logic violation: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     /**
-     * Fallback for all unexpected technical errors.
-     * Returns 500 Internal Server Error.
+     * FINAL FALLBACK: Captures all unexpected system failures (True 500s).
      */
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<ApiResponse<Object>> handleAll(Throwable ex) {
         log.error("CRITICAL SYSTEM ERROR: ", ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected system error occurred.");
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected internal error occurred.");
     }
 
     /**
-     * Centralized helper to maintain the ApiResponse structure.
+     * Internal helper to standardize the Response Entity creation.
      */
     private ResponseEntity<ApiResponse<Object>> buildResponse(HttpStatus status, String message) {
         return new ResponseEntity<>(ApiResponse.error(message), status);
     }
 }
-
-
